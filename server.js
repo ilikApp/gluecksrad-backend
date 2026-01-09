@@ -1,10 +1,15 @@
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const questions = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "questions.json"), "utf8")
+);
 
 const DATA_FILE = "users.json";
 
@@ -45,7 +50,18 @@ app.get("/leaderboard", (req, res) => {
 
   res.json(list);
 });
+app.get("/question/random", (req, res) => {
+  const q = questions[Math.floor(Math.random() * questions.length)];
 
-app.listen(3000, () => {
-  console.log("Server läuft auf Port 3000");
+  res.json({
+    id: q.id,
+    question: q.question,
+    answers: q.answers,
+    points: q.points
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Server läuft auf Port " + PORT);
 });
