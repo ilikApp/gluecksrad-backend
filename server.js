@@ -57,9 +57,10 @@ app.get("/question/random", (req, res) => {
     id: q.id,
     question: q.question,
     answers: q.answers,
+    correct: q.correct,
     points: q.points
   });
-});
+}); 
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
