@@ -61,6 +61,31 @@ app.get("/question/random", (req, res) => {
     points: q.points
   });
 }); 
+app.post("/answer", (req, res) => {
+  const { userId, questionId, chosenIndex } = req.body;
+
+  const users = JSON.parse(fs.readFileSync(DATA_FILE));
+  if (!users[userId]) users[userId] = { points: 50 };
+
+  const question = questions.find(q => q.id === questionId);
+  if (!question) {
+    return res.status(400).json({ error: "Frage nicht gefunden" });
+  }
+
+  let result = "wrong";
+
+  if (chosenIndex === question.correct) {
+    users[userId].points += question.points;
+    result = "correct";
+  }
+
+  fs.writeFileSync(DATA_FILE, JSON.stringify(users));
+
+  res.json({
+    result,
+    points: users[userId].points
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
