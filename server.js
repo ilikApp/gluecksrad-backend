@@ -7,11 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const questions = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "questions.json"), "utf8")
-);
+const QUESTIONS_FILE = path.join(__dirname, "questions.json");
+const DATA_FILE = path.join(__dirname, "users.json");
 
-const DATA_FILE = "users.json";
+const questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
 
 if (!fs.existsSync(DATA_FILE)) {
   fs.writeFileSync(DATA_FILE, JSON.stringify({}));
@@ -31,60 +30,23 @@ app.get("/me/:id", (req, res) => {
 
 app.post("/me/:id", (req, res) => {
   const users = JSON.parse(fs.readFileSync(DATA_FILE));
-  const id = req.params.id;
-  const points = req.body.points;
-
-  users[id] = { points };
+  users[req.params.id] = { points: req.body.points };
   fs.writeFileSync(DATA_FILE, JSON.stringify(users));
-
   res.json({ success: true });
 });
 
 app.get("/leaderboard", (req, res) => {
   const users = JSON.parse(fs.readFileSync(DATA_FILE));
-
   const list = Object.entries(users)
-    .map(([id, data]) => ({ id, points: data.points }))
+    .map(([id, d]) => ({ id, points: d.points }))
     .sort((a, b) => b.points - a.points)
     .slice(0, 10);
-
   res.json(list);
 });
+
 app.get("/question/random", (req, res) => {
   const q = questions[Math.floor(Math.random() * questions.length)];
-
-  res.json({
-    id: q.id,
-    question: q.question,
-    answers: q.answers,
-    correct: q.correct,
-    points: q.points
-  });
-}); 
-app.post("/answer", (req, res) => {
-  const { userId, questionId, chosenIndex } = req.body;
-
-  const users = JSON.parse(fs.readFileSync(DATA_FILE));
-  if (!users[userId]) users[userId] = { points: 50 };
-
-  const question = questions.find(q => q.id === questionId);
-  if (!question) {
-    return res.status(400).json({ error: "Frage nicht gefunden" });
-  }
-
-  let result = "wrong";
-
-  if (chosenIndex === question.correct) {
-    users[userId].points += question.points;
-    result = "correct";
-  }
-
-  fs.writeFileSync(DATA_FILE, JSON.stringify(users));
-
-  res.json({
-    result,
-    points: users[userId].points
-  });
+  res.json(q);
 });
 
 const PORT = process.env.PORT || 3000;
