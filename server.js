@@ -50,6 +50,34 @@ app.get("/question/random", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+app.post("/admin/question", (req, res) => {
+  const { question, answers, correct, points } = req.body;
+
+  if (
+    !question ||
+    !Array.isArray(answers) ||
+    answers.length < 2 ||
+    correct === undefined
+  ) {
+    return res.status(400).json({ error: "Ungültige Frage" });
+  }
+
+  const questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE));
+
+  const newQuestion = {
+    id: "q" + Date.now(),
+    question,
+    answers,
+    correct,
+    points: points ?? 5
+  };
+
+  questions.push(newQuestion);
+  fs.writeFileSync(QUESTIONS_FILE, JSON.stringify(questions, null, 2));
+
+  res.json({ success: true, question: newQuestion });
+});
+
 app.listen(PORT, () => {
   console.log("Server läuft auf Port " + PORT);
 });
