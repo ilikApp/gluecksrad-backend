@@ -20,10 +20,11 @@ if (!fs.existsSync(DATA_FILE)) {
 app.get("/me/:id", (req, res) => {
   const users = JSON.parse(fs.readFileSync(DATA_FILE));
   const id = req.params.id;
+  const name = req.query.name || "Unbekannt";
 
   if (!users[id]) {
-    users[id] = { points: 50 };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(users));
+    users[id] = { points: 50, name };
+    fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2));
   }
 
   res.json(users[id]);
@@ -31,15 +32,21 @@ app.get("/me/:id", (req, res) => {
 
 app.post("/me/:id", (req, res) => {
   const users = JSON.parse(fs.readFileSync(DATA_FILE));
-  users[req.params.id] = { points: req.body.points };
-  fs.writeFileSync(DATA_FILE, JSON.stringify(users));
+  const { points, name } = req.body;
+
+  users[req.params.id] = {
+    points,
+    name: name || users[req.params.id]?.name || "Unbekannt"
+  };
+
+  fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2));
   res.json({ success: true });
 });
 
 app.get("/leaderboard", (req, res) => {
   const users = JSON.parse(fs.readFileSync(DATA_FILE));
   const list = Object.entries(users)
-    .map(([id, d]) => ({ id, points: d.points }))
+   .map(([id, d]) => ({ id, name: d.name || id, points: d.points }))
     .sort((a, b) => b.points - a.points)
     .slice(0, 10);
   res.json(list);
