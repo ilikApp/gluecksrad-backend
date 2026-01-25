@@ -45,6 +45,7 @@ app.get("/leaderboard", (req, res) => {
 });
 
 app.get("/question/random", (req, res) => {
+  const questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
   const q = questions[Math.floor(Math.random() * questions.length)];
   res.json(q);
 });
