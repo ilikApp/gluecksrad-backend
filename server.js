@@ -43,6 +43,22 @@ app.get("/leaderboard", (req, res) => {
     .slice(0, 10);
   res.json(list);
 });
+// 🔐 Admin: alle Fragen holen
+app.get("/admin/questions", (req, res) => {
+  const questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
+  res.json(questions);
+});
+
+// 🔐 Admin: Frage löschen
+app.delete("/admin/question/:id", (req, res) => {
+  const id = req.params.id;
+
+  let questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
+  questions = questions.filter(q => q.id !== id);
+
+  fs.writeFileSync(QUESTIONS_FILE, JSON.stringify(questions, null, 2));
+  res.json({ success: true });
+});
 
 app.get("/question/random", (req, res) => {
   const questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
