@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const ADMIN_KEY = process.env.ADMIN_KEY || "MEIN_GEHEIMES_PASSWORT";
 
 const app = express();
 app.use(cors());
@@ -45,13 +46,22 @@ app.get("/leaderboard", (req, res) => {
 });
 // 🔐 Admin: alle Fragen holen
 app.get("/admin/questions", (req, res) => {
-  const questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
+const key = req.headers["x-admin-key"];
+if (key !== ADMIN_KEY) {
+  return res.status(403).json({ error: "Kein Zugriff" });
+}  
+const questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
   res.json(questions);
 });
 
 // 🔐 Admin: Frage löschen
 app.delete("/admin/question/:id", (req, res) => {
-  const id = req.params.id;
+const key = req.headers["x-admin-key"];
+if (key !== ADMIN_KEY) {
+  return res.status(403).json({ error: "Kein Zugriff" });
+}
+  
+const id = req.params.id;
 
   let questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
   questions = questions.filter(q => q.id !== id);
@@ -68,6 +78,11 @@ app.get("/question/random", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.post("/admin/question", (req, res) => {
+  const key = req.headers["x-admin-key"];
+  if (key !== ADMIN_KEY) {
+    return res.status(403).json({ error: "Kein Zugriff" });
+  }
+
   const { question, answers, correct, points } = req.body;
 
   if (
