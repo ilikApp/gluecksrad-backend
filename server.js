@@ -116,6 +116,56 @@ app.post("/admin/question", (req, res) => {
 
   res.json({ success: true, question: newQuestion });
 });
+// 🔐 Admin: Frage für eine spezifische Kachel hinzufügen
+app.post("/admin/kachel/:id/question", (req, res) => {
+  const key = req.headers["x-admin-key"];
+  if (key !== ADMIN_KEY) {
+    return res.status(403).json({ error: "Kein Zugriff" });
+  }
+
+  const { question, answers, correct } = req.body;
+  const kachelId = req.params.id; // Tagesrad, Risiko oder Endlos
+
+  if (!question || !Array.isArray(answers) || answers.length < 2 || correct === undefined) {
+    return res.status(400).json({ error: "Ungültige Frage" });
+  }
+
+  // Lade die bestehenden Fragen aus der JSON-Datei
+  let questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
+
+  const newQuestion = {
+    id: `${kachelId}_q${Date.now()}`,  // Eindeutige ID für jede Frage
+    question,
+    answers,
+    correct,
+    kachelId  // Kachel ID wird hinzugefügt
+  };
+
+  questions.push(newQuestion);
+  fs.writeFileSync(QUESTIONS_FILE, JSON.stringify(questions, null, 2));
+
+  res.json({ success: true, question: newQuestion });
+});
+// 🔐 Admin: Frage für eine spezifische Kachel löschen
+app.delete("/admin/kachel/:kachelId/question/:id", (req, res) => {
+  const key = req.headers["x-admin-key"];
+  if (key !== ADMIN_KEY) {
+    return res.status(403).json({ error: "Kein Zugriff" });
+  }
+
+  const { kachelId, id } = req.params; // Kachel-ID und Frage-ID
+
+  // Lade alle Fragen
+  let questions = JSON.parse(fs.readFileSync(QUESTIONS_FILE, "utf8"));
+
+  // Filtere die Fragen, um die Frage für diese Kachel zu löschen
+  questions = questions.filter(q => q.id !== id || q.kachelId !== kachelId);
+
+  // Schreibe die geänderte Liste wieder in die JSON-Datei
+  fs.writeFileSync(QUESTIONS_FILE, JSON.stringify(questions, null, 2));
+
+  res.json({ success: true });
+});
 
 app.listen(PORT, () => {
   console.log("Server läuft auf Port " + PORT);
